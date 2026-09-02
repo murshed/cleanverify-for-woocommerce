@@ -1,0 +1,1274 @@
+/**
+ * CleanVerify for WooCommerce - Unified Admin Styles
+ *
+ * @package CleanVerify_For_WooCommerce
+ */
+
+/* ==========================================================================
+   Root Container & Design Tokens (Light & Dark)
+   ========================================================================== */
+
+.fahim-page-wrap {
+	--bg: #f8fafc;
+	--text: #0f172a;
+	--muted: #64748b;
+	--card-bg: #ffffff;
+	--card-border: #e2e8f0;
+	--card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	--sidebar-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+	--chip-bg: #f1f5f9;
+	--chip-text: #334155;
+	--stat-bg: #f1f5f9;
+	--skill-bg: #ffffff;
+	--service-bg: #f8fafc;
+	--service-hover: #ffffff;
+	--avatar-bg: #ffffff;
+	--social-hover-bg: #e0e7ff;
+	--social-hover-border: #a5b4fc;
+	--toggle-bg: #ffffff;
+	--toggle-border: #cbd5e1;
+	--stuck-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+	--table-stripe: #fafbfc;
+	--table-hover: #f1f5f9;
+	--accent-primary: #2563eb;
+	--accent-gradient: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+	--danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+	position: relative;
+	background: var(--bg);
+	color: var(--text);
+	line-height: 1.5;
+	border-radius: 16px;
+	border: 1px solid var(--card-border);
+	margin: 20px 20px 20px 0;
+	box-sizing: border-box;
+	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+	overflow: hidden;
+}
+
+.fahim-page-wrap[data-theme="dark"] {
+	--bg: #0b1120;
+	--text: #e2e8f0;
+	--muted: #94a3b8;
+	--card-bg: #0f172a;
+	--card-border: #1e293b;
+	--card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	--sidebar-bg: linear-gradient(180deg, #111c33 0%, #0b1120 100%);
+	--chip-bg: #1e293b;
+	--chip-text: #cbd5e1;
+	--stat-bg: #1e293b;
+	--skill-bg: #1e293b;
+	--service-bg: #111c33;
+	--service-hover: #16233d;
+	--avatar-bg: #1e293b;
+	--social-hover-bg: rgba(99, 102, 241, 0.25);
+	--social-hover-border: #6366f1;
+	--toggle-bg: #1e293b;
+	--toggle-border: #334155;
+	--stuck-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+	--table-stripe: #0e1628;
+	--table-hover: #16233d;
+	--accent-primary: #3b82f6;
+}
+
+.fahim-page-wrap * {
+	box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Header Bar & Theme Switcher
+   ========================================================================== */
+
+.fahim-header-bar {
+	padding: 32px 32px 24px;
+	border-bottom: 1px solid var(--card-border);
+	background: var(--card-bg);
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	position: relative;
+	gap: 20px;
+}
+
+.fahim-header-left {
+	flex: 1;
+}
+
+.fahim-header-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--chip-bg);
+	color: var(--chip-text);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 4px 12px;
+	border-radius: 999px;
+	margin-bottom: 10px;
+}
+
+.fahim-header-title {
+	font-size: 24px;
+	font-weight: 800;
+	margin: 0 0 6px 0;
+	color: var(--text);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.fahim-header-title .highlight {
+	background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.fahim-header-subtitle {
+	color: var(--muted);
+	font-size: 14px;
+	margin: 0;
+}
+
+.fahim-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+/* Theme Toggle Button */
+.fahim-theme-toggle {
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	border: 1px solid var(--toggle-border);
+	background: var(--toggle-bg);
+	color: var(--text);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+	transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, border-color 0.3s ease;
+	flex-shrink: 0;
+}
+
+.fahim-theme-toggle:hover {
+	transform: translateY(-2px);
+}
+
+.fahim-theme-toggle .icon-sun {
+	display: none;
+}
+
+.fahim-theme-toggle .icon-moon {
+	display: block;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-theme-toggle .icon-sun {
+	display: block;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-theme-toggle .icon-moon {
+	display: none;
+}
+
+/* ==========================================================================
+   Navigation Tabs
+   ========================================================================== */
+
+.fahim-nav-tabs {
+	display: flex;
+	gap: 8px;
+	padding: 0 32px;
+	background: var(--card-bg);
+	border-bottom: 1px solid var(--card-border);
+}
+
+.fahim-nav-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 18px;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--muted);
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.fahim-nav-tab:hover {
+	color: var(--text);
+}
+
+.fahim-nav-tab.is-active {
+	color: #2563eb;
+	border-bottom-color: #2563eb;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-nav-tab.is-active {
+	color: #60a5fa;
+	border-bottom-color: #60a5fa;
+}
+
+.fahim-tab-badge {
+	font-size: 11px;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--chip-bg);
+	color: var(--chip-text);
+}
+
+.fahim-nav-tab.is-active .fahim-tab-badge {
+	background: #eff6ff;
+	color: #1e40af;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-nav-tab.is-active .fahim-tab-badge {
+	background: rgba(37, 99, 235, 0.2);
+	color: #93c5fd;
+}
+
+/* ==========================================================================
+   Dashboard Content Body
+   ========================================================================== */
+
+.fahim-page {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 28px 32px 40px;
+}
+
+/* Metric Stat Cards Grid */
+.fahim-metric-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+	.fahim-metric-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.fahim-metric-card {
+	background: var(--card-bg);
+	border: 1px solid var(--card-border);
+	border-radius: 12px;
+	padding: 20px 22px;
+	box-shadow: var(--card-shadow);
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.fahim-metric-card:hover {
+	transform: translateY(-2px);
+	border-color: #93c5fd;
+}
+
+.fahim-metric-icon-wrap {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 22px;
+	flex-shrink: 0;
+}
+
+.fahim-metric-icon-blue {
+	background: #eff6ff;
+	color: #2563eb;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-metric-icon-blue {
+	background: rgba(37, 99, 235, 0.2);
+	color: #60a5fa;
+}
+
+.fahim-metric-icon-green {
+	background: #ecfdf5;
+	color: #059669;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-metric-icon-green {
+	background: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+}
+
+.fahim-metric-icon-purple {
+	background: #faf5ff;
+	color: #7c3aed;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-metric-icon-purple {
+	background: rgba(124, 58, 237, 0.2);
+	color: #c084fc;
+}
+
+.fahim-metric-details strong {
+	display: block;
+	font-size: 24px;
+	font-weight: 800;
+	color: var(--text);
+	line-height: 1.2;
+}
+
+.fahim-metric-details span {
+	font-size: 12px;
+	color: var(--muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Section Cards & Filter Box
+   ========================================================================== */
+
+.fahim-section-card {
+	background: var(--card-bg);
+	border: 1px solid var(--card-border);
+	border-radius: 12px;
+	padding: 24px 28px;
+	margin-bottom: 24px;
+	box-shadow: var(--card-shadow);
+	transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.fahim-section-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--text);
+	margin: 0 0 16px 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.fahim-section-desc {
+	font-size: 13.5px;
+	color: var(--muted);
+	margin: -8px 0 16px 0;
+	line-height: 1.5;
+}
+
+/* Presets & Filter Row */
+.fahim-filter-controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+
+.fahim-preset-pills {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.fahim-preset-label {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-right: 4px;
+}
+
+.fahim-preset-btn {
+	background: var(--chip-bg);
+	border: 1px solid var(--card-border);
+	color: var(--chip-text);
+	font-size: 12px;
+	font-weight: 700;
+	padding: 6px 12px;
+	border-radius: 999px;
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.2s ease;
+}
+
+.fahim-preset-btn:hover {
+	background: #e0e7ff;
+	border-color: #a5b4fc;
+	color: #1e40af;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-preset-btn:hover {
+	background: rgba(99, 102, 241, 0.25);
+	border-color: #6366f1;
+	color: #a5b4fc;
+}
+
+.fahim-preset-btn.is-selected {
+	background: var(--accent-gradient);
+	color: #ffffff !important;
+	border-color: transparent;
+	box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.fahim-filter-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.fahim-input-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13.5px;
+	color: var(--text);
+	font-weight: 600;
+}
+
+.fahim-number-input {
+	background: var(--bg);
+	border: 1px solid var(--card-border);
+	color: var(--text);
+	border-radius: 8px;
+	padding: 8px 12px;
+	font-size: 14px;
+	font-weight: 700;
+	width: 80px;
+	outline: none;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fahim-number-input:focus {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.fahim-btn-primary {
+	background: var(--accent-gradient);
+	color: #ffffff !important;
+	padding: 10px 18px;
+	border-radius: 8px;
+	font-size: 13.5px;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fahim-btn-primary:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.fahim-btn-secondary {
+	background: var(--service-bg);
+	border: 1px solid var(--card-border);
+	color: var(--text) !important;
+	padding: 10px 18px;
+	border-radius: 8px;
+	font-size: 13.5px;
+	font-weight: 700;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	text-decoration: none;
+	transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.fahim-btn-secondary:hover {
+	transform: translateY(-2px);
+	background: var(--service-hover);
+	border-color: #93c5fd;
+}
+
+.fahim-btn-danger {
+	background: var(--danger-gradient);
+	color: #ffffff !important;
+	padding: 11px 22px;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fahim-btn-danger:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);
+}
+
+/* ==========================================================================
+   Candidate Accounts Table
+   ========================================================================== */
+
+.fahim-table-wrapper {
+	border: 1px solid var(--card-border);
+	border-radius: 10px;
+	overflow: hidden;
+	margin-top: 14px;
+	background: var(--card-bg);
+}
+
+.fahim-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+}
+
+.fahim-table th {
+	background: var(--service-bg);
+	color: var(--muted);
+	font-size: 11.5px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--card-border);
+}
+
+.fahim-table td {
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--card-border);
+	color: var(--text);
+	font-size: 13.5px;
+	vertical-align: middle;
+}
+
+.fahim-table tr:last-child td {
+	border-bottom: none;
+}
+
+.fahim-table tbody tr {
+	transition: background-color 0.15s ease;
+}
+
+.fahim-table tbody tr:hover {
+	background: var(--table-hover);
+}
+
+.fahim-user-cell {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.fahim-user-avatar {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #2563eb, #7c3aed);
+	color: #ffffff;
+	font-weight: 800;
+	font-size: 13px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.fahim-user-name {
+	font-weight: 700;
+	color: var(--text);
+	display: block;
+	line-height: 1.3;
+}
+
+.fahim-user-username {
+	font-size: 11px;
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.fahim-id-badge {
+	font-family: monospace;
+	font-size: 12px;
+	color: var(--muted);
+	background: var(--chip-bg);
+	padding: 3px 8px;
+	border-radius: 6px;
+}
+
+.fahim-order-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11.5px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: #fef2f2;
+	color: #991b1b;
+	border: 1px solid #fecaca;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-order-badge {
+	background: rgba(239, 68, 68, 0.15);
+	color: #fca5a5;
+	border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ==========================================================================
+   Deletion Confirmation Card
+   ========================================================================== */
+
+.fahim-danger-box {
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 12px;
+	padding: 24px;
+	margin-top: 24px;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-danger-box {
+	background: rgba(239, 68, 68, 0.08);
+	border-color: rgba(239, 68, 68, 0.25);
+}
+
+.fahim-danger-title {
+	font-size: 15px;
+	font-weight: 800;
+	color: #991b1b;
+	margin: 0 0 6px 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-danger-title {
+	color: #fca5a5;
+}
+
+.fahim-danger-desc {
+	font-size: 13px;
+	color: #7f1d1d;
+	margin: 0 0 16px 0;
+	line-height: 1.5;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-danger-desc {
+	color: #cbd5e1;
+}
+
+.fahim-confirm-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--text);
+	cursor: pointer;
+	margin-bottom: 18px;
+}
+
+.fahim-confirm-actions {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+/* Notices */
+.fahim-alert {
+	padding: 14px 18px;
+	border-radius: 10px;
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13.5px;
+	font-weight: 600;
+}
+
+.fahim-alert-success {
+	background: #ecfdf5;
+	border: 1px solid #a7f3d0;
+	color: #065f46;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-alert-success {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.3);
+	color: #6ee7b7;
+}
+
+.fahim-alert-error {
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	color: #991b1b;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-alert-error {
+	background: rgba(239, 68, 68, 0.15);
+	border-color: rgba(239, 68, 68, 0.3);
+	color: #fca5a5;
+}
+
+/* Empty State */
+.fahim-empty-card {
+	background: var(--card-bg);
+	border: 1px dashed var(--card-border);
+	border-radius: 14px;
+	padding: 50px 24px;
+	text-align: center;
+	margin-top: 10px;
+}
+
+.fahim-empty-icon {
+	font-size: 44px;
+	margin-bottom: 12px;
+}
+
+.fahim-empty-title {
+	font-size: 20px;
+	font-weight: 800;
+	color: var(--text);
+	margin: 0 0 6px 0;
+}
+
+.fahim-empty-desc {
+	font-size: 14px;
+	color: var(--muted);
+	max-width: 480px;
+	margin: 0 auto 20px auto;
+	line-height: 1.5;
+}
+
+/* ==========================================================================
+   About Developer Tab Layout & Components
+   ========================================================================== */
+
+.fahim-about-grid {
+	display: grid;
+	grid-template-columns: 320px 1fr;
+	gap: 28px;
+	align-items: start;
+}
+
+@media (max-width: 960px) {
+	.fahim-about-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.fahim-author-sidebar {
+	background: var(--sidebar-bg);
+	border: 1px solid var(--card-border);
+	border-radius: 16px;
+	padding: 32px 24px 26px;
+	text-align: center;
+	box-shadow: var(--card-shadow);
+	position: sticky;
+	top: 50px;
+	transition: box-shadow 0.3s ease, transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.fahim-author-sidebar.is-stuck {
+	box-shadow: var(--stuck-shadow);
+	transform: translateY(0);
+}
+
+@media (max-width: 960px) {
+	.fahim-author-sidebar {
+		position: static;
+	}
+}
+
+.fahim-avatar-ring {
+	width: 140px;
+	height: 140px;
+	border-radius: 50%;
+	padding: 4px;
+	background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+	margin: 0 auto 16px auto;
+	box-shadow: 0 8px 16px -2px rgba(37, 99, 235, 0.25);
+}
+
+.fahim-avatar-img {
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	display: block;
+	background: var(--avatar-bg);
+}
+
+.fahim-author-name {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--text);
+	margin: 0 0 6px 0;
+	line-height: 1.2;
+}
+
+.fahim-author-title {
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--text);
+	line-height: 1.35;
+	margin-bottom: 6px;
+}
+
+.fahim-author-title .highlight {
+	background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+.fahim-author-tagline {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--muted);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	margin-bottom: 14px;
+}
+
+.fahim-availability {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #ecfdf5;
+	border: 1px solid #a7f3d0;
+	color: #047857;
+	font-size: 12px;
+	font-weight: 700;
+	padding: 5px 12px;
+	border-radius: 999px;
+	margin-bottom: 12px;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-availability {
+	background: rgba(16, 185, 129, 0.12);
+	border-color: rgba(16, 185, 129, 0.35);
+	color: #34d399;
+}
+
+.fahim-availability .pulse {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #10b981;
+	animation: fahim-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes fahim-pulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+	}
+	50% {
+		box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+	}
+}
+
+.fahim-author-bio {
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.6;
+	margin-bottom: 18px;
+}
+
+.fahim-badge-pill {
+	background: var(--chip-bg);
+	color: var(--chip-text);
+	font-size: 12px;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 20px;
+	display: inline-block;
+	margin-bottom: 12px;
+}
+
+.fahim-sidebar-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-bottom: 20px;
+	padding: 14px 10px;
+	background: var(--stat-bg);
+	border-radius: 12px;
+}
+
+.fahim-sidebar-stat {
+	text-align: center;
+}
+
+.fahim-sidebar-stat strong {
+	display: block;
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--text);
+}
+
+.fahim-sidebar-stat span {
+	font-size: 10.5px;
+	color: var(--muted);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.fahim-sidebar-skills {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px;
+	margin-bottom: 20px;
+}
+
+.fahim-skill-tag {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--chip-text);
+	background: var(--skill-bg);
+	border: 1px solid var(--card-border);
+	padding: 4px 10px;
+	border-radius: 999px;
+}
+
+.fahim-sidebar-socials {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.fahim-social-btn {
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	text-decoration: none;
+	background: var(--chip-bg);
+	border: 1px solid var(--card-border);
+	color: var(--text);
+	transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.fahim-social-btn:hover {
+	transform: translateY(-2px);
+	background: var(--social-hover-bg);
+	border-color: var(--social-hover-border);
+}
+
+.fahim-btn-contact {
+	background: var(--accent-gradient);
+	color: #ffffff !important;
+	padding: 12px 20px;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	box-sizing: border-box;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.fahim-btn-contact:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
+	color: #ffffff !important;
+}
+
+.fahim-services-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.fahim-core-grid {
+	grid-template-columns: repeat(2, 1fr);
+	gap: 14px;
+}
+
+@media (max-width: 640px) {
+	.fahim-core-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.fahim-service-card {
+	background: var(--service-bg);
+	border: 1px solid var(--card-border);
+	border-radius: 10px;
+	padding: 18px;
+	transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.fahim-service-card:hover {
+	border-color: #93c5fd;
+	transform: translateY(-2px);
+	background: var(--service-hover);
+}
+
+.fahim-service-icon {
+	font-size: 24px;
+	margin-bottom: 8px;
+}
+
+.fahim-service-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--text);
+	margin: 0 0 6px 0;
+}
+
+.fahim-service-desc {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* Tinted Service Highlights */
+.fahim-service-card-green {
+	background: #f0fdf4;
+	border-color: #bbf7d0;
+}
+
+.fahim-service-card-green .fahim-service-title {
+	color: #166534;
+}
+
+.fahim-service-card-blue {
+	background: #eff6ff;
+	border-color: #bfdbfe;
+}
+
+.fahim-service-card-blue .fahim-service-title {
+	color: #1e40af;
+}
+
+.fahim-service-card-amber {
+	background: #fefce8;
+	border-color: #fef08a;
+}
+
+.fahim-service-card-amber .fahim-service-title {
+	color: #854d0e;
+}
+
+.fahim-service-card-purple {
+	background: #faf5ff;
+	border-color: #e9d5ff;
+}
+
+.fahim-service-card-purple .fahim-service-title {
+	color: #6b21a8;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-green {
+	background: rgba(16, 185, 129, 0.1);
+	border-color: rgba(16, 185, 129, 0.3);
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-green .fahim-service-title {
+	color: #34d399;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-blue {
+	background: rgba(37, 99, 235, 0.12);
+	border-color: rgba(37, 99, 235, 0.35);
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-blue .fahim-service-title {
+	color: #60a5fa;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-amber {
+	background: rgba(245, 158, 11, 0.12);
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-amber .fahim-service-title {
+	color: #fbbf24;
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-purple {
+	background: rgba(147, 51, 234, 0.12);
+	border-color: rgba(147, 51, 234, 0.35);
+}
+
+.fahim-page-wrap[data-theme="dark"] .fahim-service-card-purple .fahim-service-title {
+	color: #c084fc;
+}
+
+/* About CTA Section */
+.fahim-cta {
+	position: relative;
+	background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #312e81 100%);
+	color: #ffffff;
+	border-radius: 16px;
+	padding: 44px 40px;
+	margin-top: 24px;
+	overflow: hidden;
+	text-align: center;
+	box-shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+}
+
+.fahim-cta::before {
+	content: "";
+	position: absolute;
+	width: 420px;
+	height: 420px;
+	top: -180px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 60%);
+	pointer-events: none;
+}
+
+.fahim-cta-eyebrow {
+	position: relative;
+	display: inline-block;
+	background: rgba(99, 102, 241, 0.2);
+	border: 1px solid rgba(129, 140, 248, 0.4);
+	color: #a5b4fc;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 6px 14px;
+	border-radius: 999px;
+	margin-bottom: 16px;
+}
+
+.fahim-cta-title {
+	position: relative;
+	font-size: 26px;
+	font-weight: 800;
+	margin: 0 0 10px 0;
+	line-height: 1.25;
+	color: #ffffff;
+}
+
+.fahim-cta-text {
+	position: relative;
+	color: #cbd5e1;
+	font-size: 15px;
+	max-width: 560px;
+	margin: 0 auto 28px auto;
+	line-height: 1.6;
+}
+
+.fahim-cta-actions {
+	position: relative;
+	display: flex;
+	gap: 14px;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.fahim-cta-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 700;
+	font-size: 14px;
+	text-decoration: none;
+	padding: 14px 26px;
+	border-radius: 10px;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.fahim-cta-btn-primary {
+	background: linear-gradient(135deg, #2563eb, #4f46e5);
+	color: #ffffff !important;
+	box-shadow: 0 8px 20px rgba(79, 70, 229, 0.45);
+}
+
+.fahim-cta-btn-primary:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 12px 26px rgba(79, 70, 229, 0.6);
+	color: #ffffff !important;
+}
+
+.fahim-cta-btn-ghost {
+	background: rgba(255, 255, 255, 0.06);
+	color: #e2e8f0 !important;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.fahim-cta-btn-ghost:hover {
+	background: rgba(255, 255, 255, 0.12);
+	transform: translateY(-2px);
+	color: #ffffff !important;
+}
+
+.fahim-cta-note {
+	position: relative;
+	margin-top: 18px;
+	font-size: 13px;
+	color: #94a3b8;
+}
+
+.fahim-cta-note .dot {
+	color: #4ade80;
+}
+
+@media (max-width: 640px) {
+	.fahim-cta {
+		padding: 32px 22px;
+	}
+
+	.fahim-cta-title {
+		font-size: 22px;
+	}
+
+	.fahim-cta-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+.fahim-subtext {
+	color: var(--muted);
+	margin-bottom: 24px;
+	font-size: 14px;
+}
+
+.fahim-services-intro .fahim-subtext {
+	max-width: 720px;
+	line-height: 1.7;
+	margin-bottom: 28px;
+}
+
+.fahim-services-intro .fahim-subtext strong {
+	color: var(--text);
+	font-weight: 700;
+}
