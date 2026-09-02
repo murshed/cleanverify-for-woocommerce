@@ -58,7 +58,6 @@ No, deletion in the free version is permanent. Always export a CSV backup before
 
 = 1.0.0 =
 * Initial release of CleanVerify for WooCommerce.
-* Modern dashboard redesign with dark/light mode toggle.
+* Modern dashboard design with dark/light mode toggle.
 * CSV Export feature with UTF-8 BOM for Excel compatibility.
 * Tabbed navigation with "About Developer" portfolio and direct contact channels.
-* "Settings" action link on the WordPress Plugins screen.
