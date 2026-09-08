@@ -3,7 +3,7 @@
  * Plugin Name:       CleanVerify for WooCommerce
  * Description:       All-in-one customer verification, anti-fraud protection, and inactive customer cleanup for WooCommerce stores.
  * Version:           1.0.0
- * Requires at least: 6.0
+ * Requires at least: 7.0
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * Author:            FahimMurshed

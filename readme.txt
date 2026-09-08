@@ -2,7 +2,7 @@
 Contributors: fahimmurshed
 Author URI: https://fahimm.com
 Tags: woocommerce, customer cleanup, verification, users, orders
-Requires at least: 6.0
+Requires at least: 7.0
 Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.0.0

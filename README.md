@@ -1,6 +1,6 @@
 # CleanVerify for WooCommerce
 
-[![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue.svg)](https://wordpress.org/)
+[![WordPress](https://img.shields.io/badge/WordPress-7.0%2B-blue.svg)](https://wordpress.org/)
 [![WooCommerce](https://img.shields.io/badge/WooCommerce-Compatible-purple.svg)](https://woocommerce.com/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg)](https://www.php.net/)
 [![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
@@ -23,7 +23,7 @@
 
 ## 📋 Requirements
 
-* **WordPress:** 6.0 or higher
+* **WordPress:** 7.0 or higher
 * **WooCommerce:** Active installation
 * **PHP:** 7.4 or higher
 
