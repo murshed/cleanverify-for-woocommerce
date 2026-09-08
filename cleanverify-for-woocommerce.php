@@ -4,7 +4,6 @@
  * Description:       All-in-one customer verification, anti-fraud protection, and inactive customer cleanup for WooCommerce stores.
  * Version:           1.0.0
  * Requires at least: 6.0
- * Tested up to:      7.1
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * Author:            FahimMurshed
@@ -59,7 +58,7 @@ class CleanVerify_For_WooCommerce {
 	}
 
 	/**
-	 * Enqueue admin styles for plugin settings pages.
+	 * Enqueue admin assets (styles and scripts) for plugin settings pages.
 	 *
 	 * @param string $hook The current admin page hook.
 	 */
@@ -73,6 +72,14 @@ class CleanVerify_For_WooCommerce {
 			plugins_url( 'assets/css/admin.css', __FILE__ ),
 			array(),
 			CLEANVERIFY_VERSION
+		);
+
+		wp_enqueue_script(
+			'cleanverify-admin-script',
+			plugins_url( 'assets/js/admin.js', __FILE__ ),
+			array(),
+			CLEANVERIFY_VERSION,
+			true
 		);
 	}
 
@@ -280,49 +287,6 @@ class CleanVerify_For_WooCommerce {
 			}
 			?>
 		</div>
-
-		<script>
-		(function() {
-			var wrap = document.getElementById('fahim-page-wrap');
-			if (!wrap) return;
-
-			var STORAGE_KEY = 'fahim-theme';
-
-			function applyTheme(theme) {
-				if (theme === 'dark') {
-					wrap.setAttribute('data-theme', 'dark');
-				} else {
-					wrap.removeAttribute('data-theme');
-				}
-			}
-
-			function getStoredTheme() {
-				try {
-					return localStorage.getItem(STORAGE_KEY);
-				} catch (e) {
-					return null;
-				}
-			}
-
-			function systemPrefersDark() {
-				return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-			}
-
-			var stored = getStoredTheme();
-			applyTheme(stored || (systemPrefersDark() ? 'dark' : 'light'));
-
-			var toggle = document.getElementById('fahim-theme-toggle');
-			if (toggle) {
-				toggle.addEventListener('click', function() {
-					var next = wrap.hasAttribute('data-theme') ? 'light' : 'dark';
-					applyTheme(next);
-					try {
-						localStorage.setItem(STORAGE_KEY, next);
-					} catch (e) {}
-				});
-			}
-		})();
-		</script>
 		<?php
 	}
 

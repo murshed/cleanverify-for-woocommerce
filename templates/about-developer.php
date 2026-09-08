@@ -252,21 +252,3 @@ $avatar_url = plugins_url( 'assets/images/fahim-murshed.jpg', dirname( __DIR__ )
 		</div>
 	</div>
 </div>
-
-<script>
-	(function() {
-		var sidebar = document.querySelector('.fahim-author-sidebar');
-		if (!sidebar) return;
-
-		var observer = new IntersectionObserver(function(entries) {
-			entries.forEach(function(entry) {
-				if (entry.isIntersecting && entry.boundingClientRect.top < 0) {
-					sidebar.classList.add('is-stuck');
-				} else {
-					sidebar.classList.remove('is-stuck');
-				}
-			});
-		}, { rootMargin: '0px 0px -100% 0px' });
-		observer.observe(sidebar);
-	})();
-</script>

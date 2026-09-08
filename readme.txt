@@ -1,7 +1,7 @@
 === CleanVerify for WooCommerce ===
 Contributors: fahimmurshed
 Author URI: https://fahimm.com
-Tags: woocommerce, customer cleanup, verification, users, orders, export, csv, spam
+Tags: woocommerce, customer cleanup, verification, users, orders
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
