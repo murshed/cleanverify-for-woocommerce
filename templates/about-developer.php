@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$avatar_url = plugins_url( 'assets/images/fahim-murshed.jpg', dirname( __DIR__ ) . '/cleanverify-for-woocommerce.php' );
+$cleanverify_avatar_url = plugins_url( 'assets/images/fahim-murshed.jpg', dirname( __DIR__ ) . '/cleanverify-for-woocommerce.php' );
 ?>
 
 <div class="fahim-page">
@@ -17,7 +17,7 @@ $avatar_url = plugins_url( 'assets/images/fahim-murshed.jpg', dirname( __DIR__ )
 			<!-- Sidebar Profile -->
 			<div class="fahim-author-sidebar">
 				<div class="fahim-avatar-ring">
-					<img src="<?php echo esc_url( $avatar_url ); ?>" alt="Fahim Murshid" class="fahim-avatar-img">
+					<img src="<?php echo esc_url( $cleanverify_avatar_url ); ?>" alt="Fahim Murshid" class="fahim-avatar-img">
 				</div>
 				<h3 class="fahim-author-name">Fahim Murshid</h3>
 				<div class="fahim-author-title">Turning Ideas into <span class="highlight">Intelligent Web Experiences</span></div>

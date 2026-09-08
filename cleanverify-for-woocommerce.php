@@ -179,6 +179,7 @@ class CleanVerify_For_WooCommerce {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct output stream for CSV download.
 		fclose( $output );
 		exit;
 	}
@@ -239,12 +240,14 @@ class CleanVerify_For_WooCommerce {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'cleanverify-for-woocommerce' ) );
 		}
 
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'cleanup';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab parameter is used for view switching only.
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'cleanup';
 		if ( ! in_array( $active_tab, array( 'cleanup', 'about' ), true ) ) {
 			$active_tab = 'cleanup';
 		}
 
-		$min_age          = isset( $_REQUEST['cv_min_age'] ) ? absint( $_REQUEST['cv_min_age'] ) : 30;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Filter parameter is used for read-only candidate display.
+		$min_age          = isset( $_REQUEST['cv_min_age'] ) ? absint( wp_unslash( $_REQUEST['cv_min_age'] ) ) : 30;
 		$candidates_count = count( $this->get_customers_without_orders( $min_age ) );
 		?>
 		<div class="fahim-page-wrap" id="fahim-page-wrap">
@@ -387,7 +390,12 @@ class CleanVerify_For_WooCommerce {
 						<?php
 						$presets = array( 30, 60, 90, 180, 0 );
 						foreach ( $presets as $p ) {
-							$label         = 0 === $p ? __( 'All Time (0d)', 'cleanverify-for-woocommerce' ) : sprintf( __( '%d Days', 'cleanverify-for-woocommerce' ), $p );
+							if ( 0 === $p ) {
+								$label = __( 'All Time (0d)', 'cleanverify-for-woocommerce' );
+							} else {
+								/* translators: %d: Number of days. */
+								$label = sprintf( __( '%d Days', 'cleanverify-for-woocommerce' ), $p );
+							}
 							$is_selected   = (int) $min_age === $p ? 'is-selected' : '';
 							$url           = add_query_arg(
 								array(
@@ -487,7 +495,12 @@ class CleanVerify_For_WooCommerce {
 											</td>
 											<td>
 												<strong><?php echo esc_html( gmdate( 'M j, Y', $registered_timestamp ) ); ?></strong>
-												<br><span style="font-size:11.5px; color:var(--muted);"><?php printf( esc_html__( '%s ago', 'cleanverify-for-woocommerce' ), esc_html( $time_diff ) ); ?></span>
+												<br><span style="font-size:11.5px; color:var(--muted);">
+													<?php
+													/* translators: %s: Human-readable relative time difference (e.g. 2 days). */
+													printf( esc_html__( '%s ago', 'cleanverify-for-woocommerce' ), esc_html( $time_diff ) );
+													?>
+												</span>
 											</td>
 											<td>
 												<span class="fahim-order-badge">🚫 <?php esc_html_e( '0 Orders', 'cleanverify-for-woocommerce' ); ?></span>
