@@ -2641,3 +2641,283 @@ body.toplevel_page_cleanverify #wpfooter a:hover,
 	text-decoration: underline !important;
 }
 
+/* ==========================================================================
+   Candidate Table Limit Filters, Toolbar & Deletion Animations
+   ========================================================================== */
+
+.fahim-section-header-flex {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.fahim-section-header-info {
+	flex: 1 1 320px;
+}
+
+.fahim-limit-filter {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: #f1f5f9;
+	padding: 5px 8px;
+	border-radius: 10px;
+	border: 1px solid #e2e8f0;
+}
+
+.fahim-limit-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-left: 2px;
+}
+
+.fahim-limit-pills {
+	display: flex;
+	gap: 4px;
+}
+
+.fahim-limit-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 42px;
+	height: 26px;
+	padding: 0 9px;
+	font-size: 12px;
+	font-weight: 700;
+	color: #475569;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	text-decoration: none;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.fahim-limit-pill:hover {
+	background: #e2e8f0;
+	color: #1e293b;
+	border-color: #94a3b8;
+}
+
+.fahim-limit-pill.is-active {
+	background: #2563eb;
+	color: #ffffff !important;
+	border-color: #2563eb;
+	box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.fahim-table-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 12px 18px;
+	background: #f8fafc;
+	border: 1px solid var(--card-border);
+	border-bottom: none;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+}
+
+.fahim-table-toolbar-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.fahim-table-toolbar-right {
+	display: flex;
+	align-items: center;
+}
+
+.fahim-selection-counter {
+	font-size: 12px;
+	font-weight: 600;
+	color: #475569;
+	background: #e2e8f0;
+	padding: 4px 10px;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.fahim-selection-counter strong {
+	color: #0f172a;
+	font-weight: 800;
+}
+
+.fahim-showing-text {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #64748b;
+}
+
+/* Row Deletion Disintegration Animation */
+tr.fahim-row-deleting {
+	background: rgba(239, 68, 68, 0.14) !important;
+	transform: translateX(-30px) scale(0.97);
+	opacity: 0;
+	filter: blur(2px);
+	transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, filter 0.45s ease;
+}
+
+/* Alert Pop-in Animation */
+.fahim-alert-animated {
+	animation: fahimAlertPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fahimAlertPopIn {
+	from {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+/* Deletion Overlay HUD */
+.fahim-delete-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(15, 23, 42, 0.68);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	z-index: 999999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: fahimFadeInOverlay 0.25s ease forwards;
+}
+
+.fahim-delete-overlay-card {
+	background: #ffffff;
+	border-radius: 16px;
+	padding: 36px 36px 32px 36px;
+	max-width: 420px;
+	width: 90%;
+	text-align: center;
+	box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+	animation: fahimScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.fahim-delete-spinner {
+	position: relative;
+	width: 72px;
+	height: 72px;
+	margin: 0 auto 20px auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.fahim-delete-anim-icon {
+	font-size: 34px;
+	animation: fahimTrashPulse 1.2s infinite ease-in-out;
+	z-index: 2;
+}
+
+.fahim-delete-spinner-ring {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	border: 3.5px solid rgba(239, 68, 68, 0.18);
+	border-top-color: #ef4444;
+	border-right-color: #f59e0b;
+	animation: fahimSpin 0.9s linear infinite;
+}
+
+.fahim-delete-anim-title {
+	font-size: 19px;
+	font-weight: 800;
+	color: #0f172a;
+	margin: 0 0 8px 0;
+	letter-spacing: -0.01em;
+}
+
+.fahim-delete-anim-subtitle {
+	font-size: 13.5px;
+	color: #64748b;
+	margin: 0 0 22px 0;
+	line-height: 1.5;
+}
+
+.fahim-delete-progress-bar {
+	width: 100%;
+	height: 8px;
+	background: #e2e8f0;
+	border-radius: 999px;
+	overflow: hidden;
+	position: relative;
+}
+
+.fahim-delete-progress-fill {
+	height: 100%;
+	width: 100%;
+	background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);
+	background-size: 200% 100%;
+	border-radius: 999px;
+	animation: fahimProgressShimmer 1.2s linear infinite;
+}
+
+@keyframes fahimTrashPulse {
+	0%, 100% {
+		transform: scale(1) rotate(0deg);
+	}
+	50% {
+		transform: scale(1.15) rotate(-8deg);
+	}
+}
+
+@keyframes fahimSpin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes fahimProgressShimmer {
+	0% {
+		background-position: 100% 0;
+	}
+	100% {
+		background-position: -100% 0;
+	}
+}
+
+@keyframes fahimFadeInOverlay {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes fahimScaleUp {
+	from {
+		opacity: 0;
+		transform: scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+

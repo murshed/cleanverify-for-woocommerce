@@ -319,8 +319,13 @@ class CleanVerify_For_WooCommerce {
 			$active_tab = 'cleanup';
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Filter parameter is used for read-only candidate display.
-		$min_age          = isset( $_REQUEST['cv_min_age'] ) ? absint( wp_unslash( $_REQUEST['cv_min_age'] ) ) : 30;
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Filter parameters are used for read-only candidate display.
+		$min_age  = isset( $_REQUEST['cv_min_age'] ) ? absint( wp_unslash( $_REQUEST['cv_min_age'] ) ) : 30;
+		$per_page = isset( $_REQUEST['cv_per_page'] ) ? sanitize_key( wp_unslash( $_REQUEST['cv_per_page'] ) ) : '100';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $per_page, array( '100', '500', '1000', 'all' ), true ) ) {
+			$per_page = '100';
+		}
 		$candidates_count = count( $this->get_customers_without_orders( $min_age ) );
 		?>
 		<div class="fahim-page-wrap wp-exclude-emoji" id="fahim-page-wrap">
@@ -414,7 +419,7 @@ class CleanVerify_For_WooCommerce {
 			<!-- Tab Content Body Panels -->
 			<div class="fahim-tab-panels">
 				<div id="fahim-tab-cleanup" class="fahim-tab-pane <?php echo 'cleanup' === $active_tab ? 'is-active' : ''; ?>">
-					<?php $this->render_cleanup_tab( $min_age ); ?>
+					<?php $this->render_cleanup_tab( $min_age, $per_page ); ?>
 				</div>
 
 				<?php if ( $is_pro_active ) : ?>
@@ -766,9 +771,10 @@ class CleanVerify_For_WooCommerce {
 	/**
 	 * Render the Customers Cleanup tab with modern cards, metrics, and presets.
 	 *
-	 * @param int $min_age Current filter threshold in days.
+	 * @param int    $min_age  Current filter threshold in days.
+	 * @param string $per_page Number of candidate rows to display ('100', '500', '1000', 'all').
 	 */
-	private function render_cleanup_tab( $min_age ) {
+	private function render_cleanup_tab( $min_age, $per_page = '100' ) {
 		$deleted = array();
 		$errors  = array();
 
@@ -806,18 +812,26 @@ class CleanVerify_For_WooCommerce {
 			}
 		}
 
-		$candidates = $this->get_customers_without_orders( $min_age );
+		$all_candidates   = $this->get_customers_without_orders( $min_age );
+		$total_candidates = count( $all_candidates );
+
+		if ( 'all' === $per_page ) {
+			$candidates = $all_candidates;
+		} else {
+			$limit      = absint( $per_page );
+			$candidates = array_slice( $all_candidates, 0, $limit );
+		}
 		?>
 		<div class="fahim-page">
 			<?php if ( ! empty( $deleted ) ) : ?>
-				<div class="fahim-alert fahim-alert-success">
+				<div class="fahim-alert fahim-alert-success fahim-alert-animated">
 					<span>✅</span>
 					<span><strong><?php esc_html_e( 'Successfully deleted:', 'cleanverify-for-woocommerce' ); ?></strong> <?php echo esc_html( implode( ', ', $deleted ) ); ?></span>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( ! empty( $errors ) ) : ?>
-				<div class="fahim-alert fahim-alert-error">
+				<div class="fahim-alert fahim-alert-error fahim-alert-animated">
 					<span>⚠️</span>
 					<span><strong><?php esc_html_e( 'Could not delete:', 'cleanverify-for-woocommerce' ); ?></strong> <?php echo esc_html( implode( ', ', $errors ) ); ?></span>
 				</div>
@@ -828,7 +842,7 @@ class CleanVerify_For_WooCommerce {
 				<div class="fahim-metric-card">
 					<div class="fahim-metric-icon-wrap fahim-metric-icon-blue">👥</div>
 					<div class="fahim-metric-details">
-						<strong><?php echo esc_html( count( $candidates ) ); ?></strong>
+						<strong><?php echo esc_html( $total_candidates ); ?></strong>
 						<span><?php esc_html_e( 'Candidates Found', 'cleanverify-for-woocommerce' ); ?></span>
 					</div>
 				</div>
@@ -869,9 +883,10 @@ class CleanVerify_For_WooCommerce {
 							$is_selected   = (int) $min_age === $p ? 'is-selected' : '';
 							$url           = add_query_arg(
 								array(
-									'page'       => self::MENU_SLUG,
-									'tab'        => 'cleanup',
-									'cv_min_age' => $p,
+									'page'        => self::MENU_SLUG,
+									'tab'         => 'cleanup',
+									'cv_min_age'  => $p,
+									'cv_per_page' => $per_page,
 								),
 								admin_url( 'admin.php' )
 							);
@@ -883,6 +898,7 @@ class CleanVerify_For_WooCommerce {
 						<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="fahim-filter-form">
 							<input type="hidden" name="page" value="<?php echo esc_attr( self::MENU_SLUG ); ?>">
 							<input type="hidden" name="tab" value="cleanup">
+							<input type="hidden" name="cv_per_page" value="<?php echo esc_attr( $per_page ); ?>">
 							<div class="fahim-input-combo">
 								<span class="fahim-input-combo-label">⏱️ <?php esc_html_e( 'Older than', 'cleanverify-for-woocommerce' ); ?></span>
 								<input type="number" id="cv_min_age" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>" min="0" class="fahim-number-input" aria-label="<?php esc_attr_e( 'Minimum account age in days', 'cleanverify-for-woocommerce' ); ?>">
@@ -892,13 +908,14 @@ class CleanVerify_For_WooCommerce {
 								<span>🔍</span> <?php esc_html_e( 'Filter', 'cleanverify-for-woocommerce' ); ?>
 							</button>
 						</form>
-						<?php if ( ! empty( $candidates ) ) : ?>
+						<?php if ( ! empty( $all_candidates ) ) : ?>
 							<form method="post" style="display:inline-block;">
 								<?php wp_nonce_field( self::EXPORT_NONCE_ACTION, 'cv_export_nonce' ); ?>
 								<input type="hidden" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>">
+								<input type="hidden" name="cv_per_page" value="<?php echo esc_attr( $per_page ); ?>">
 								<input type="hidden" name="cv_action" value="export_csv">
 								<button type="submit" class="fahim-btn-secondary">
-									<span>📥</span> <?php esc_html_e( 'Export All as CSV', 'cleanverify-for-woocommerce' ); ?> (<?php echo count( $candidates ); ?>)
+									<span>📥</span> <?php esc_html_e( 'Export All as CSV', 'cleanverify-for-woocommerce' ); ?> (<?php echo count( $all_candidates ); ?>)
 								</button>
 							</form>
 						<?php endif; ?>
@@ -907,34 +924,94 @@ class CleanVerify_For_WooCommerce {
 			</div>
 
 			<!-- Customer Candidates List Table -->
-			<?php if ( empty( $candidates ) ) : ?>
+			<?php if ( empty( $all_candidates ) ) : ?>
 				<div class="fahim-empty-card">
 					<div class="fahim-empty-icon">✨</div>
 					<h4 class="fahim-empty-title"><?php esc_html_e( 'Customer Database is Clean!', 'cleanverify-for-woocommerce' ); ?></h4>
 					<p class="fahim-empty-desc"><?php esc_html_e( 'No customer accounts match the current inactivity threshold. All accounts have placed at least one order or are newer than the selected filter buffer.', 'cleanverify-for-woocommerce' ); ?></p>
-					<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::MENU_SLUG, 'tab' => 'cleanup', 'cv_min_age' => 0 ), admin_url( 'admin.php' ) ) ); ?>" class="fahim-btn-secondary">
+					<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::MENU_SLUG, 'tab' => 'cleanup', 'cv_min_age' => 0, 'cv_per_page' => $per_page ), admin_url( 'admin.php' ) ) ); ?>" class="fahim-btn-secondary">
 						<span>⚡</span> <?php esc_html_e( 'Check All Accounts (0 Days)', 'cleanverify-for-woocommerce' ); ?>
 					</a>
 				</div>
 			<?php else : ?>
 				<div class="fahim-section-card">
-					<h3 class="fahim-section-title">
-						👥 <?php esc_html_e( 'Review & Remove Candidate Customers', 'cleanverify-for-woocommerce' ); ?>
-					</h3>
-					<p class="fahim-section-desc">
-						<?php esc_html_e( 'Tick the accounts you wish to export or delete. A CSV backup is recommended before permanently deleting any customer data.', 'cleanverify-for-woocommerce' ); ?>
-					</p>
+					<div class="fahim-section-header-flex">
+						<div class="fahim-section-header-info">
+							<h3 class="fahim-section-title">
+								👥 <?php esc_html_e( 'Review & Remove Candidate Customers', 'cleanverify-for-woocommerce' ); ?>
+							</h3>
+							<p class="fahim-section-desc">
+								<?php esc_html_e( 'Tick the accounts you wish to export or delete. A CSV backup is recommended before permanently deleting any customer data.', 'cleanverify-for-woocommerce' ); ?>
+							</p>
+						</div>
+						<div class="fahim-limit-filter">
+							<span class="fahim-limit-label"><?php esc_html_e( 'Show:', 'cleanverify-for-woocommerce' ); ?></span>
+							<div class="fahim-limit-pills">
+								<?php
+								$limit_options = array(
+									'100'  => '100',
+									'500'  => '500',
+									'1000' => '1000',
+									'all'  => __( 'All', 'cleanverify-for-woocommerce' ),
+								);
+								foreach ( $limit_options as $limit_key => $limit_label ) {
+									$is_active = ( $per_page === (string) $limit_key ) ? 'is-active' : '';
+									$url       = add_query_arg(
+										array(
+											'page'        => self::MENU_SLUG,
+											'tab'         => 'cleanup',
+											'cv_min_age'  => $min_age,
+											'cv_per_page' => $limit_key,
+										),
+										admin_url( 'admin.php' )
+									);
+									echo '<a href="' . esc_url( $url ) . '" class="fahim-limit-pill ' . esc_attr( $is_active ) . '">' . esc_html( $limit_label ) . '</a>';
+								}
+								?>
+							</div>
+						</div>
+					</div>
 
-					<form method="post">
+					<form method="post" id="cv-cleanup-form">
 						<?php wp_nonce_field( self::NONCE_ACTION, 'cv_nonce' ); ?>
 						<input type="hidden" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>">
+						<input type="hidden" name="cv_per_page" value="<?php echo esc_attr( $per_page ); ?>">
+
+						<!-- Table Action Toolbar -->
+						<div class="fahim-table-toolbar">
+							<div class="fahim-table-toolbar-left">
+								<button type="button" class="fahim-btn-secondary fahim-btn-sm" id="cv-select-all-btn">
+									<span>☑️</span> <?php esc_html_e( 'Select All List', 'cleanverify-for-woocommerce' ); ?>
+								</button>
+								<button type="button" class="fahim-btn-secondary fahim-btn-sm" id="cv-deselect-all-btn" style="display: none;">
+									<span>⬜</span> <?php esc_html_e( 'Deselect All', 'cleanverify-for-woocommerce' ); ?>
+								</button>
+								<span class="fahim-selection-counter" id="cv-selection-status">
+									<strong id="cv-selected-count">0</strong> / <?php echo esc_html( count( $candidates ) ); ?> <?php esc_html_e( 'Selected', 'cleanverify-for-woocommerce' ); ?>
+								</span>
+							</div>
+							<div class="fahim-table-toolbar-right">
+								<span class="fahim-showing-text">
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: 1: Display count, 2: Total count. */
+											__( 'Showing %1$d of %2$d candidates', 'cleanverify-for-woocommerce' ),
+											count( $candidates ),
+											$total_candidates
+										)
+									);
+									?>
+								</span>
+							</div>
+						</div>
 
 						<div class="fahim-table-wrapper">
-							<table class="fahim-table">
+							<table class="fahim-table" id="cv-candidates-table">
 								<thead>
 									<tr>
 										<th style="width:40px; text-align:center;">
-											<input type="checkbox" onclick="document.querySelectorAll('.cv-cb').forEach(cb=>cb.checked=this.checked);" aria-label="<?php esc_attr_e( 'Select all', 'cleanverify-for-woocommerce' ); ?>">
+											<input type="checkbox" id="cv-master-checkbox" aria-label="<?php esc_attr_e( 'Select all accounts on this page', 'cleanverify-for-woocommerce' ); ?>">
 										</th>
 										<th><?php esc_html_e( 'Customer', 'cleanverify-for-woocommerce' ); ?></th>
 										<th><?php esc_html_e( 'Email Address', 'cleanverify-for-woocommerce' ); ?></th>
@@ -949,9 +1026,9 @@ class CleanVerify_For_WooCommerce {
 										$registered_timestamp = strtotime( $c->user_registered );
 										$time_diff            = human_time_diff( $registered_timestamp, time() );
 										?>
-										<tr>
+										<tr id="cv-row-<?php echo esc_attr( $c->ID ); ?>">
 											<td style="text-align:center;">
-												<input class="cv-cb" type="checkbox" name="cv_user_ids[]" value="<?php echo esc_attr( $c->ID ); ?>">
+												<input class="cv-cb" type="checkbox" name="cv_user_ids[]" value="<?php echo esc_attr( $c->ID ); ?>" data-user-email="<?php echo esc_attr( $c->user_email ); ?>">
 											</td>
 											<td>
 												<div class="fahim-user-cell">
@@ -990,11 +1067,11 @@ class CleanVerify_For_WooCommerce {
 								<?php esc_html_e( 'Account deletion is permanent and cannot be reversed. Always export a CSV backup first. Accounts carrying Administrator, Editor, or Shop Manager roles are automatically protected and will never be touched.', 'cleanverify-for-woocommerce' ); ?>
 							</p>
 							<label class="fahim-confirm-label">
-								<input type="checkbox" name="cv_confirm" value="1" required>
+								<input type="checkbox" name="cv_confirm" id="cv-confirm-checkbox" value="1" required>
 								<span><?php esc_html_e( 'I understand this will permanently delete the selected customer accounts and cannot be undone.', 'cleanverify-for-woocommerce' ); ?></span>
 							</label>
 							<div class="fahim-confirm-actions">
-								<button type="submit" name="cv_action" value="delete" class="fahim-btn-danger" onclick="return confirm('<?php echo esc_js( __( 'Permanently delete the selected customers? This cannot be undone.', 'cleanverify-for-woocommerce' ) ); ?>');">
+								<button type="submit" name="cv_action" value="delete" id="cv-delete-btn" class="fahim-btn-danger">
 									<span>🗑️</span> <?php esc_html_e( 'Delete Selected Customers', 'cleanverify-for-woocommerce' ); ?>
 								</button>
 								<button type="submit" name="cv_action" value="export_csv" formnovalidate class="fahim-btn-secondary">
@@ -1005,6 +1082,23 @@ class CleanVerify_For_WooCommerce {
 					</form>
 				</div>
 			<?php endif; ?>
+
+			<!-- Deletion Loading & Animation Overlay HUD -->
+			<div id="fahim-delete-anim-overlay" class="fahim-delete-overlay" style="display:none;" aria-hidden="true">
+				<div class="fahim-delete-overlay-card">
+					<div class="fahim-delete-spinner">
+						<span class="fahim-delete-anim-icon">🗑️</span>
+						<div class="fahim-delete-spinner-ring"></div>
+					</div>
+					<h4 class="fahim-delete-anim-title"><?php esc_html_e( 'Deleting Customer Records...', 'cleanverify-for-woocommerce' ); ?></h4>
+					<p class="fahim-delete-anim-subtitle" id="fahim-delete-anim-msg">
+						<?php esc_html_e( 'Permanently cleaning selected accounts and sanitizing WooCommerce database.', 'cleanverify-for-woocommerce' ); ?>
+					</p>
+					<div class="fahim-delete-progress-bar">
+						<div class="fahim-delete-progress-fill"></div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<?php
 	}
