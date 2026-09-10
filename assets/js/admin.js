@@ -217,6 +217,22 @@
 			}
 		});
 
+		// Allow clicking row to toggle customer checkbox smoothly
+		table.addEventListener('click', function (e) {
+			var target = e.target;
+			if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.tagName === 'A' || target.closest('a') || target.closest('button')) {
+				return;
+			}
+			var row = target.closest('tbody tr');
+			if (row) {
+				var cb = row.querySelector('.cv-cb');
+				if (cb) {
+					cb.checked = !cb.checked;
+					updateSelectionState();
+				}
+			}
+		});
+
 		// Initial state calculation
 		updateSelectionState();
 
@@ -277,6 +293,7 @@
 				}, 500);
 			});
 		}
+	}
 
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', initCleanVerifyAdmin);
