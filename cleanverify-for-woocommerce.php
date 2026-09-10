@@ -3,7 +3,7 @@
  * Plugin Name:       CleanVerify for WooCommerce
  * Description:       All-in-one customer verification, anti-fraud protection, and inactive customer cleanup for WooCommerce stores.
  * Version:           1.0.0
- * Requires at least: 7.0
+ * Requires at least: 6.0
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * Author:            FahimMurshed
@@ -27,6 +27,22 @@ function cleanverify_woocommerce_missing_notice() {
 		esc_html__( 'CleanVerify for WooCommerce requires WooCommerce to be installed and active.', 'cleanverify-for-woocommerce' ) .
 		'</p></div>';
 }
+
+/**
+ * Completely disable WordPress Twemoji remote script and CDN requests.
+ */
+function cleanverify_disable_emojis() {
+	remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+	remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+	remove_action( 'admin_print_styles', 'print_emoji_styles' );
+	remove_action( 'wp_print_styles', 'print_emoji_styles' );
+	remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+	remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+	remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+	add_filter( 'emoji_svg_url', '__return_false' );
+}
+add_action( 'init', 'cleanverify_disable_emojis' );
+add_action( 'admin_init', 'cleanverify_disable_emojis' );
 
 /**
  * Boot the plugin once other plugins have loaded, so we can safely check for WooCommerce.
@@ -53,8 +69,35 @@ class CleanVerify_For_WooCommerce {
 
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_page' ) );
+		add_action( 'admin_head', array( $this, 'admin_menu_custom_styles' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_plugin_action_links' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+	}
+
+	/**
+	 * Inject minimal CSS in admin head to style the PRO badge in the WordPress admin sidebar menu.
+	 */
+	public function admin_menu_custom_styles() {
+		if ( defined( 'CLEANVERIFY_PRO_VERSION' ) ) {
+			echo '<style id="cleanverify-menu-badge-css">
+				#adminmenu .fahim-menu-pro-badge,
+				#adminmenu .fahim-title-pro-badge {
+					background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%) !important;
+					color: #ffffff !important;
+					font-size: 8px !important;
+					font-weight: 800 !important;
+					letter-spacing: 0.05em !important;
+					padding: 1.5px 4.5px !important;
+					border-radius: 3px !important;
+					text-transform: uppercase !important;
+					line-height: 1.1 !important;
+					display: inline-block !important;
+					margin-left: 4px !important;
+					vertical-align: 1px !important;
+					box-shadow: 0 1px 3px rgba(239, 68, 68, 0.4) !important;
+				}
+			</style>';
+		}
 	}
 
 	/**
@@ -63,22 +106,41 @@ class CleanVerify_For_WooCommerce {
 	 * @param string $hook The current admin page hook.
 	 */
 	public function enqueue_admin_assets( $hook ) {
-		if ( 'users_page_' . self::MENU_SLUG !== $hook ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Page query parameter is read-only for asset enqueue screen detection.
+		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : ( isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : '' );
+		$is_cv_page = ( self::MENU_SLUG === $page )
+			|| ( 'toplevel_page_' . self::MENU_SLUG === $hook )
+			|| ( 'users_page_' . self::MENU_SLUG === $hook )
+			|| ( false !== strpos( $hook, self::MENU_SLUG ) )
+			|| ( isset( $GLOBALS['hook_suffix'] ) && false !== strpos( $GLOBALS['hook_suffix'], self::MENU_SLUG ) );
+
+		if ( ! $is_cv_page ) {
 			return;
 		}
+
+		// Prevent WordPress emoji scripts from making remote CDN requests on plugin pages.
+		remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+		remove_action( 'admin_print_styles', 'print_emoji_styles' );
+		add_filter( 'emoji_svg_url', '__return_false' );
+
+		$css_path = plugin_dir_path( __FILE__ ) . 'assets/css/admin.css';
+		$js_path  = plugin_dir_path( __FILE__ ) . 'assets/js/admin.js';
+
+		$css_ver = file_exists( $css_path ) ? filemtime( $css_path ) : CLEANVERIFY_VERSION;
+		$js_ver  = file_exists( $js_path ) ? filemtime( $js_path ) : CLEANVERIFY_VERSION;
 
 		wp_enqueue_style(
 			'cleanverify-admin-style',
 			plugins_url( 'assets/css/admin.css', __FILE__ ),
 			array(),
-			CLEANVERIFY_VERSION
+			$css_ver
 		);
 
 		wp_enqueue_script(
 			'cleanverify-admin-script',
 			plugins_url( 'assets/js/admin.js', __FILE__ ),
 			array(),
-			CLEANVERIFY_VERSION,
+			$js_ver,
 			true
 		);
 	}
@@ -92,7 +154,7 @@ class CleanVerify_For_WooCommerce {
 	public function add_plugin_action_links( $links ) {
 		$settings_link = sprintf(
 			'<a href="%s">%s</a>',
-			esc_url( admin_url( 'users.php?page=' . self::MENU_SLUG ) ),
+			esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG ) ),
 			esc_html__( 'Settings', 'cleanverify-for-woocommerce' )
 		);
 		array_unshift( $links, $settings_link );
@@ -100,12 +162,20 @@ class CleanVerify_For_WooCommerce {
 	}
 
 	public function add_admin_page() {
-		$hook = add_users_page(
-			esc_html__( 'CleanVerify for WooCommerce', 'cleanverify-for-woocommerce' ),
-			esc_html__( 'CleanVerify', 'cleanverify-for-woocommerce' ),
+		$is_pro_active = defined( 'CLEANVERIFY_PRO_VERSION' );
+		$page_title    = $is_pro_active ? __( 'CleanVerify Pro for WooCommerce', 'cleanverify-for-woocommerce' ) : __( 'CleanVerify for WooCommerce', 'cleanverify-for-woocommerce' );
+		$menu_title    = $is_pro_active 
+			? 'CleanVerify <span class="fahim-title-pro-badge fahim-menu-pro-badge">PRO</span>' 
+			: __( 'CleanVerify', 'cleanverify-for-woocommerce' );
+
+		$hook = add_menu_page(
+			$page_title,
+			$menu_title,
 			'delete_users',
 			self::MENU_SLUG,
-			array( $this, 'render_admin_page' )
+			array( $this, 'render_admin_page' ),
+			'dashicons-shield-alt',
+			55.6 // Positioned immediately after "WooCommerce" (position 55.5)
 		);
 
 		// Runs before any HTML is output, so headers for the CSV download can be sent safely.
@@ -240,9 +310,12 @@ class CleanVerify_For_WooCommerce {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'cleanverify-for-woocommerce' ) );
 		}
 
+		$is_pro_active = defined( 'CLEANVERIFY_PRO_VERSION' );
+		$valid_tabs    = $is_pro_active ? array( 'cleanup', 'settings', 'trash', 'logs', 'about' ) : array( 'cleanup', 'pro', 'about' );
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab parameter is used for view switching only.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'cleanup';
-		if ( ! in_array( $active_tab, array( 'cleanup', 'about' ), true ) ) {
+		if ( ! in_array( $active_tab, $valid_tabs, true ) ) {
 			$active_tab = 'cleanup';
 		}
 
@@ -250,46 +323,443 @@ class CleanVerify_For_WooCommerce {
 		$min_age          = isset( $_REQUEST['cv_min_age'] ) ? absint( wp_unslash( $_REQUEST['cv_min_age'] ) ) : 30;
 		$candidates_count = count( $this->get_customers_without_orders( $min_age ) );
 		?>
-		<div class="fahim-page-wrap" id="fahim-page-wrap">
+		<div class="fahim-page-wrap wp-exclude-emoji" id="fahim-page-wrap">
 			<!-- Header Bar -->
 			<div class="fahim-header-bar">
 				<div class="fahim-header-left">
-					<span class="fahim-header-badge">🛡️ <?php esc_html_e( 'CleanVerify Suite', 'cleanverify-for-woocommerce' ); ?></span>
+					<?php if ( $is_pro_active ) : ?>
+						<span class="fahim-header-badge fahim-tab-badge-pro"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px; margin-right:3px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><?php esc_html_e( 'CleanVerify Pro Active', 'cleanverify-for-woocommerce' ); ?></span>
+					<?php else : ?>
+						<span class="fahim-header-badge"><?php esc_html_e( 'CleanVerify Suite', 'cleanverify-for-woocommerce' ); ?></span>
+					<?php endif; ?>
 					<h1 class="fahim-header-title">
 						Clean<span class="highlight">Verify</span> <?php esc_html_e( 'for WooCommerce', 'cleanverify-for-woocommerce' ); ?>
+						<?php if ( $is_pro_active ) : ?>
+							<span class="fahim-title-pro-badge">PRO</span>
+						<?php endif; ?>
 					</h1>
 					<p class="fahim-header-subtitle">
-						<?php esc_html_e( 'Safely verify accounts, block fake registrations, and clean customers with zero orders.', 'cleanverify-for-woocommerce' ); ?>
+						<?php
+						if ( $is_pro_active ) {
+							esc_html_e( 'Enterprise customer verification, anti-fraud protection, automated scheduling, and inactive customer cleanup.', 'cleanverify-for-woocommerce' );
+						} else {
+							esc_html_e( 'Safely verify accounts, block fake registrations, and clean customers with zero orders.', 'cleanverify-for-woocommerce' );
+						}
+						?>
 					</p>
 				</div>
 				<div class="fahim-header-actions">
-					<button type="button" class="fahim-theme-toggle" id="fahim-theme-toggle" aria-label="<?php esc_attr_e( 'Toggle dark mode', 'cleanverify-for-woocommerce' ); ?>">
-						<span class="icon-moon" title="<?php esc_attr_e( 'Switch to Dark Mode', 'cleanverify-for-woocommerce' ); ?>">🌙</span>
-						<span class="icon-sun" title="<?php esc_attr_e( 'Switch to Light Mode', 'cleanverify-for-woocommerce' ); ?>">☀️</span>
+					<?php
+					if ( $is_pro_active ) {
+						/* translators: 1: Core version number, 2: Pro version number */
+						$version_tooltip = sprintf( esc_html__( 'CleanVerify Core v%1$s | Pro v%2$s', 'cleanverify-for-woocommerce' ), CLEANVERIFY_VERSION, CLEANVERIFY_PRO_VERSION );
+					} else {
+						/* translators: %s: Core version number */
+						$version_tooltip = sprintf( esc_html__( 'CleanVerify Core v%s', 'cleanverify-for-woocommerce' ), CLEANVERIFY_VERSION );
+					}
+					?>
+					<div class="fahim-version-badge" title="<?php echo esc_attr( $version_tooltip ); ?>">
+						<span class="fahim-version-dot"></span>
+						<span class="fahim-version-label"><?php esc_html_e( 'v', 'cleanverify-for-woocommerce' ); ?><?php echo esc_html( CLEANVERIFY_VERSION ); ?></span>
+						<?php if ( $is_pro_active ) : ?>
+							<span class="fahim-version-pro-tag"><?php esc_html_e( 'PRO', 'cleanverify-for-woocommerce' ); ?></span>
+						<?php endif; ?>
+					</div>
+					<button type="button" class="fahim-header-btn" data-cv-modal="cv-modal-roadmap" title="<?php esc_attr_e( 'View Product Roadmap', 'cleanverify-for-woocommerce' ); ?>">
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+						<span><?php esc_html_e( 'Roadmap', 'cleanverify-for-woocommerce' ); ?></span>
+						<?php if ( $is_pro_active ) : ?>
+							<span class="fahim-header-btn-badge"><?php esc_html_e( 'PRO + FREE', 'cleanverify-for-woocommerce' ); ?></span>
+						<?php else : ?>
+							<span class="fahim-header-btn-badge fahim-header-btn-badge-free"><?php esc_html_e( 'FREE', 'cleanverify-for-woocommerce' ); ?></span>
+						<?php endif; ?>
+					</button>
+					<button type="button" class="fahim-header-btn" data-cv-modal="cv-modal-changelog" title="<?php esc_attr_e( 'View Version Changelog', 'cleanverify-for-woocommerce' ); ?>">
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+						<span><?php esc_html_e( 'Changelog', 'cleanverify-for-woocommerce' ); ?></span>
 					</button>
 				</div>
 			</div>
 
 			<!-- Navigation Tabs -->
 			<div class="fahim-nav-tabs">
-				<a href="<?php echo esc_url( admin_url( 'users.php?page=' . self::MENU_SLUG . '&tab=cleanup' ) ); ?>" class="fahim-nav-tab <?php echo 'cleanup' === $active_tab ? 'is-active' : ''; ?>">
-					<span>👥 <?php esc_html_e( 'Customer Cleanup', 'cleanverify-for-woocommerce' ); ?></span>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=cleanup' ) ); ?>" class="fahim-nav-tab <?php echo 'cleanup' === $active_tab ? 'is-active' : ''; ?>" data-tab="cleanup">
+					<span><?php esc_html_e( 'Customer Cleanup', 'cleanverify-for-woocommerce' ); ?></span>
 					<span class="fahim-tab-badge"><?php echo esc_html( $candidates_count ); ?></span>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'users.php?page=' . self::MENU_SLUG . '&tab=about' ) ); ?>" class="fahim-nav-tab <?php echo 'about' === $active_tab ? 'is-active' : ''; ?>">
-					<span>🚀 <?php esc_html_e( 'About Developer', 'cleanverify-for-woocommerce' ); ?></span>
+				<?php if ( $is_pro_active ) : ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=settings' ) ); ?>" class="fahim-nav-tab <?php echo 'settings' === $active_tab ? 'is-active' : ''; ?>" data-tab="settings">
+						<span><?php esc_html_e( 'Anti-Spam & OTP', 'cleanverify-for-woocommerce' ); ?></span>
+						<span class="fahim-tab-badge fahim-tab-badge-pro"><?php esc_html_e( 'PRO', 'cleanverify-for-woocommerce' ); ?></span>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=trash' ) ); ?>" class="fahim-nav-tab <?php echo 'trash' === $active_tab ? 'is-active' : ''; ?>" data-tab="trash">
+						<span><?php esc_html_e( 'Trash Bin & Restore', 'cleanverify-for-woocommerce' ); ?></span>
+						<span class="fahim-tab-badge fahim-tab-badge-pro"><?php esc_html_e( 'PRO', 'cleanverify-for-woocommerce' ); ?></span>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=logs' ) ); ?>" class="fahim-nav-tab <?php echo 'logs' === $active_tab ? 'is-active' : ''; ?>" data-tab="logs">
+						<span><?php esc_html_e( 'Audit Trail', 'cleanverify-for-woocommerce' ); ?></span>
+						<span class="fahim-tab-badge fahim-tab-badge-pro"><?php esc_html_e( 'PRO', 'cleanverify-for-woocommerce' ); ?></span>
+					</a>
+				<?php else : ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=pro' ) ); ?>" class="fahim-nav-tab <?php echo 'pro' === $active_tab ? 'is-active' : ''; ?>" data-tab="pro">
+						<span><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align:-1px; margin-right:4px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><?php esc_html_e( 'Free vs Pro', 'cleanverify-for-woocommerce' ); ?></span>
+						<span class="fahim-tab-badge fahim-tab-badge-pro"><?php esc_html_e( 'PRO', 'cleanverify-for-woocommerce' ); ?></span>
+					</a>
+				<?php endif; ?>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=about' ) ); ?>" class="fahim-nav-tab <?php echo 'about' === $active_tab ? 'is-active' : ''; ?>" data-tab="about">
+					<span><?php esc_html_e( 'About Developer', 'cleanverify-for-woocommerce' ); ?></span>
 				</a>
 			</div>
 
-			<!-- Tab Content Body -->
-			<?php
-			if ( 'about' === $active_tab ) {
-				$this->render_about_developer_tab();
-			} else {
-				$this->render_cleanup_tab( $min_age );
-			}
-			?>
+			<!-- Tab Content Body Panels -->
+			<div class="fahim-tab-panels">
+				<div id="fahim-tab-cleanup" class="fahim-tab-pane <?php echo 'cleanup' === $active_tab ? 'is-active' : ''; ?>">
+					<?php $this->render_cleanup_tab( $min_age ); ?>
+				</div>
+
+				<?php if ( $is_pro_active ) : ?>
+					<div id="fahim-tab-settings" class="fahim-tab-pane <?php echo 'settings' === $active_tab ? 'is-active' : ''; ?>">
+						<?php do_action( 'cleanverify_render_pro_tab', 'settings' ); ?>
+					</div>
+					<div id="fahim-tab-trash" class="fahim-tab-pane <?php echo 'trash' === $active_tab ? 'is-active' : ''; ?>">
+						<?php do_action( 'cleanverify_render_pro_tab', 'trash' ); ?>
+					</div>
+					<div id="fahim-tab-logs" class="fahim-tab-pane <?php echo 'logs' === $active_tab ? 'is-active' : ''; ?>">
+						<?php do_action( 'cleanverify_render_pro_tab', 'logs' ); ?>
+					</div>
+				<?php else : ?>
+					<div id="fahim-tab-pro" class="fahim-tab-pane <?php echo 'pro' === $active_tab ? 'is-active' : ''; ?>">
+						<?php $this->render_free_vs_pro_tab(); ?>
+					</div>
+				<?php endif; ?>
+
+				<div id="fahim-tab-about" class="fahim-tab-pane <?php echo 'about' === $active_tab ? 'is-active' : ''; ?>">
+					<?php $this->render_about_developer_tab(); ?>
+				</div>
+			</div>
+
+			<!-- Roadmap Modal -->
+			<div class="fahim-modal-backdrop" id="cv-modal-roadmap" role="dialog" aria-modal="true" aria-hidden="true">
+				<div class="fahim-modal-dialog">
+					<div class="fahim-modal-header">
+						<div class="fahim-modal-header-left">
+							<span class="fahim-modal-icon">🗺️</span>
+							<div>
+								<h3 class="fahim-modal-title"><?php esc_html_e( 'CleanVerify Product Roadmap', 'cleanverify-for-woocommerce' ); ?></h3>
+								<?php if ( $is_pro_active ) : ?>
+									<span class="fahim-modal-subtitle"><?php esc_html_e( 'Upcoming Pro integrations and Core Free milestone releases', 'cleanverify-for-woocommerce' ); ?></span>
+								<?php else : ?>
+									<span class="fahim-modal-subtitle"><?php esc_html_e( 'Upcoming open-source enhancements & core milestone releases', 'cleanverify-for-woocommerce' ); ?></span>
+								<?php endif; ?>
+							</div>
+						</div>
+						<button type="button" class="fahim-modal-close" data-cv-modal-close aria-label="<?php esc_attr_e( 'Close modal', 'cleanverify-for-woocommerce' ); ?>">&times;</button>
+					</div>
+					<div class="fahim-modal-body">
+						<?php if ( $is_pro_active ) : ?>
+							<!-- ================= CleanVerify Pro Milestones ================= -->
+							<div class="fahim-roadmap-section-title">
+								<span class="fahim-section-tag fahim-section-tag-pro"><?php esc_html_e( 'PRO EDITION', 'cleanverify-for-woocommerce' ); ?></span>
+								<span><?php esc_html_e( 'CleanVerify Pro Milestones', 'cleanverify-for-woocommerce' ); ?></span>
+							</div>
+
+							<div class="fahim-roadmap-milestone">
+								<div class="fahim-roadmap-milestone-header">
+									<span class="fahim-status-badge is-progress"><?php esc_html_e( 'In Progress', 'cleanverify-for-woocommerce' ); ?></span>
+									<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.1.0 - Multi-Channel Instant Verification', 'cleanverify-for-woocommerce' ); ?></h4>
+								</div>
+								<div class="fahim-roadmap-items">
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">💬</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'WhatsApp Business OTP Verification', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'PRO FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Deliver 6-digit verification codes directly to customer WhatsApp numbers via WhatsApp Cloud API & Twilio with 1-click verification links.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">✈️</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'Telegram Bot Instant Verification', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'PRO FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Instant OTP codes and 1-tap deep-link authentication via dedicated Telegram Bot with zero SMS costs.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">📲</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'SMS Gateway Failover', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'PRO FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Multi-carrier SMS routing (Twilio, Vonage, AWS SNS) with automatic failover if WhatsApp or Telegram is undelivered.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="fahim-roadmap-milestone">
+								<div class="fahim-roadmap-milestone-header">
+									<span class="fahim-status-badge is-planned"><?php esc_html_e( 'Planned', 'cleanverify-for-woocommerce' ); ?></span>
+									<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.2.0 - Advanced Anti-Fraud & Risk Scoring', 'cleanverify-for-woocommerce' ); ?></h4>
+								</div>
+								<div class="fahim-roadmap-items">
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">🌐</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'VPN & Datacenter Proxy Blocker', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'SECURITY', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Detect and challenge registrations originating from commercial VPNs (NordVPN, ExpressVPN), datacenter proxies, and TOR exit nodes.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">🤖</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'Multi-Provider CAPTCHA Suite', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'BOT DEFENSE', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Support for Google reCAPTCHA v3 invisible score-based challenges and hCaptcha alongside Cloudflare Turnstile.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">💳</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'Checkout Velocity Rate-Limiter', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'FRAUD SHIELD', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Prevent card-testing bot attacks by rate-limiting checkout attempts and registration submissions per IP.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="fahim-roadmap-milestone">
+								<div class="fahim-roadmap-milestone-header">
+									<span class="fahim-status-badge is-planned"><?php esc_html_e( 'Planned', 'cleanverify-for-woocommerce' ); ?></span>
+									<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.3.0 - Visual Storage & Multisite Sync', 'cleanverify-for-woocommerce' ); ?></h4>
+								</div>
+								<div class="fahim-roadmap-items">
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">📊</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'Live Database Storage Savings Visualizer', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'ANALYTICS', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Visual analytics displaying exact MB/GB database space saved, index table reduction, and SQL query performance improvements.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+									<div class="fahim-roadmap-item">
+										<div class="fahim-roadmap-item-icon">🗄️</div>
+										<div class="fahim-roadmap-item-content">
+											<div class="fahim-roadmap-item-title-row">
+												<strong><?php esc_html_e( 'WordPress Multisite Network Sync', 'cleanverify-for-woocommerce' ); ?></strong>
+												<span class="fahim-tag-pill fahim-tag-pill-pro"><?php esc_html_e( 'ENTERPRISE', 'cleanverify-for-woocommerce' ); ?></span>
+											</div>
+											<p><?php esc_html_e( 'Network-wide super-admin controls to run customer cleanup across all multisite child stores with synced blacklists.', 'cleanverify-for-woocommerce' ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- ================= CleanVerify Core Milestones ================= -->
+							<div class="fahim-roadmap-section-title" style="margin-top: 28px;">
+								<span class="fahim-section-tag fahim-section-tag-free"><?php esc_html_e( 'CORE EDITION', 'cleanverify-for-woocommerce' ); ?></span>
+								<span><?php esc_html_e( 'CleanVerify Core (Free) Milestones', 'cleanverify-for-woocommerce' ); ?></span>
+							</div>
+						<?php endif; ?>
+
+						<div class="fahim-roadmap-milestone">
+							<div class="fahim-roadmap-milestone-header">
+								<span class="fahim-status-badge is-progress"><?php esc_html_e( 'In Progress', 'cleanverify-for-woocommerce' ); ?></span>
+								<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.1.0 - Advanced Filtering & CSV Export Suite', 'cleanverify-for-woocommerce' ); ?></h4>
+							</div>
+							<div class="fahim-roadmap-items">
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">🔍</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Advanced Date & Inactivity Range Builder', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Filter inactive customers by custom registration date ranges and precise days-since-last-login thresholds.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">📥</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Custom CSV Export Column Builder', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Customize export columns (User ID, Email, Registered Date, Last Login, Order Count, Spend) before exporting.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">📊</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Pre-Deletion Summary Breakdown', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Detailed preview showing estimated database storage to be reclaimed and customer role distribution before executing deletion.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="fahim-roadmap-milestone">
+							<div class="fahim-roadmap-milestone-header">
+								<span class="fahim-status-badge is-planned"><?php esc_html_e( 'Planned', 'cleanverify-for-woocommerce' ); ?></span>
+								<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.2.0 - Performance & High-Scale Core Engine', 'cleanverify-for-woocommerce' ); ?></h4>
+							</div>
+							<div class="fahim-roadmap-items">
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">⚡</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'High-Volume Asynchronous Batch Scanner', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Chunk-based background scanner optimized for stores with 100,000+ customer records without PHP timeout limits.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">🛡️</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Custom User Role Exclusion Whitelist', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Granular protection checklist ensuring custom WordPress roles (Wholesalers, B2B, Affiliates) are never deleted.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">🔍</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Email Domain Instant Search & Filter', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill fahim-tag-pill-free"><?php esc_html_e( 'CORE FEATURE', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Real-time client-side domain search box in candidate table to isolate specific email providers.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="fahim-roadmap-milestone">
+							<div class="fahim-roadmap-milestone-header">
+								<span class="fahim-status-badge is-planned"><?php esc_html_e( 'Planned', 'cleanverify-for-woocommerce' ); ?></span>
+								<h4 class="fahim-roadmap-milestone-title"><?php esc_html_e( 'v1.3.0 - Developer & CLI Extensibility', 'cleanverify-for-woocommerce' ); ?></h4>
+							</div>
+							<div class="fahim-roadmap-items">
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">💻</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Native WP-CLI Automation Suite', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill"><?php esc_html_e( 'DEV TOOLS', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Headless command line tools for running scans, exports, and scheduled cleanup batches directly in server crons.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+								<div class="fahim-roadmap-item">
+									<div class="fahim-roadmap-item-icon">🪝</div>
+									<div class="fahim-roadmap-item-content">
+										<div class="fahim-roadmap-item-title-row">
+											<strong><?php esc_html_e( 'Extended Action Hooks & Filter Matrix', 'cleanverify-for-woocommerce' ); ?></strong>
+											<span class="fahim-tag-pill"><?php esc_html_e( 'DEV TOOLS', 'cleanverify-for-woocommerce' ); ?></span>
+										</div>
+										<p><?php esc_html_e( 'Granular WordPress developer hooks for third-party CRM syncing and custom pre-deletion events.', 'cleanverify-for-woocommerce' ); ?></p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<?php if ( ! $is_pro_active ) : ?>
+							<!-- Pro Features Roadmap Teaser Banner in Free Mode -->
+							<div class="fahim-roadmap-pro-teaser">
+								<div class="fahim-roadmap-pro-teaser-content">
+									<strong>⚡ <?php esc_html_e( 'Looking for Multi-Channel OTP & Anti-Fraud Features?', 'cleanverify-for-woocommerce' ); ?></strong>
+									<p><?php esc_html_e( 'CleanVerify Pro introduces WhatsApp Business OTP, Telegram Bot verification, SMS failover, and VPN detection in v1.1.0.', 'cleanverify-for-woocommerce' ); ?></p>
+								</div>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '&tab=pro' ) ); ?>" class="fahim-btn-primary fahim-btn-sm" style="flex-shrink:0;">
+									<?php esc_html_e( 'Explore Pro Features', 'cleanverify-for-woocommerce' ); ?> &rarr;
+								</a>
+							</div>
+						<?php endif; ?>
+					</div>
+					<div class="fahim-modal-footer">
+						<span class="fahim-modal-footer-hint"><?php esc_html_e( 'Have a feature suggestion? Contact via fahimm.com', 'cleanverify-for-woocommerce' ); ?></span>
+						<button type="button" class="fahim-btn-secondary fahim-btn-sm" data-cv-modal-close><?php esc_html_e( 'Close', 'cleanverify-for-woocommerce' ); ?></button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Changelog Modal -->
+			<div class="fahim-modal-backdrop" id="cv-modal-changelog" role="dialog" aria-modal="true" aria-hidden="true">
+				<div class="fahim-modal-dialog">
+					<div class="fahim-modal-header">
+						<div class="fahim-modal-header-left">
+							<span class="fahim-modal-icon">📋</span>
+							<div>
+								<h3 class="fahim-modal-title"><?php esc_html_e( 'Version Changelog', 'cleanverify-for-woocommerce' ); ?></h3>
+								<span class="fahim-modal-subtitle"><?php esc_html_e( 'Release history and feature updates', 'cleanverify-for-woocommerce' ); ?></span>
+							</div>
+						</div>
+						<button type="button" class="fahim-modal-close" data-cv-modal-close aria-label="<?php esc_attr_e( 'Close modal', 'cleanverify-for-woocommerce' ); ?>">&times;</button>
+					</div>
+					<div class="fahim-modal-body">
+						<div class="fahim-changelog-release">
+							<div class="fahim-changelog-release-header">
+								<span class="fahim-status-badge is-released"><?php esc_html_e( 'Current Release', 'cleanverify-for-woocommerce' ); ?></span>
+								<h4 class="fahim-changelog-version"><?php esc_html_e( 'Version 1.0.0', 'cleanverify-for-woocommerce' ); ?></h4>
+							</div>
+							<ul class="fahim-changelog-list">
+								<li><strong><?php esc_html_e( 'Core Engine:', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Safe zero-order inactive customer detection cross-referenced with order history and guest billing emails.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'CSV Export:', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Instant export of filtered or selected customer data with Excel UTF-8 BOM encoding.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Modern Dashboard:', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Unified Light Theme design system with instant tab switching and zero page reloads.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Role Shield:', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Hardcoded exclusion protecting Administrators, Editors, Authors, and Shop Managers.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Turnstile Anti-Spam (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Privacy-first Cloudflare Turnstile bot protection for checkout, registration, and login.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Disposable Email Shield (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Blacklist blocking 500+ disposable email domains with custom domain support.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Email OTP Verification (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( '6-digit numeric email passcode verification with live AJAX verification and resend cooldown.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Quarantine Trash Bin (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( '30-day soft-delete holding bin with 1-click full user account and meta restoration.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Automated Cron Pruning (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Scheduled daily, weekly, or monthly background inactive account cleanups.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'GDPR Anonymization (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Pseudonymize customer personal data while maintaining historical sales reporting integrity.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Audit Trail & WP-CLI (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Activity logging and command-line automation for server administrators.', 'cleanverify-for-woocommerce' ); ?></li>
+							</ul>
+						</div>
+
+						<div class="fahim-changelog-release">
+							<div class="fahim-changelog-release-header">
+								<span class="fahim-status-badge is-progress"><?php esc_html_e( 'In Development', 'cleanverify-for-woocommerce' ); ?></span>
+								<h4 class="fahim-changelog-version"><?php esc_html_e( 'Version 1.1.0', 'cleanverify-for-woocommerce' ); ?></h4>
+							</div>
+							<ul class="fahim-changelog-list">
+								<li><strong><?php esc_html_e( 'WhatsApp Verification (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'WhatsApp Business Cloud API and Twilio integration for instant 6-digit OTP delivery.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Telegram Verification (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Instant bot verification and deep-linked 1-tap authentication with zero SMS fees.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'SMS Failover Routing (Pro):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Multi-carrier SMS routing (Twilio, Vonage, AWS SNS) as backup channel.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Advanced Date & Inactivity Builder (Core):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Custom date range selectors and days-since-last-login isolation.', 'cleanverify-for-woocommerce' ); ?></li>
+								<li><strong><?php esc_html_e( 'Custom CSV Column Builder (Core):', 'cleanverify-for-woocommerce' ); ?></strong> <?php esc_html_e( 'Choose specific user fields and export columns before downloading.', 'cleanverify-for-woocommerce' ); ?></li>
+							</ul>
+						</div>
+					</div>
+					<div class="fahim-modal-footer">
+						<span class="fahim-modal-footer-hint"><?php esc_html_e( 'CleanVerify Core & Pro Release Notes', 'cleanverify-for-woocommerce' ); ?></span>
+						<button type="button" class="fahim-btn-secondary fahim-btn-sm" data-cv-modal-close><?php esc_html_e( 'Close', 'cleanverify-for-woocommerce' ); ?></button>
+					</div>
+				</div>
+			</div>
 		</div>
+		<div class="clear"></div>
 		<?php
 	}
 
@@ -403,19 +873,21 @@ class CleanVerify_For_WooCommerce {
 									'tab'        => 'cleanup',
 									'cv_min_age' => $p,
 								),
-								admin_url( 'users.php' )
+								admin_url( 'admin.php' )
 							);
 							echo '<a href="' . esc_url( $url ) . '" class="fahim-preset-btn ' . esc_attr( $is_selected ) . '">' . esc_html( $label ) . '</a> ';
 						}
 						?>
 					</div>
 					<div class="fahim-filter-actions">
-						<form method="get" action="<?php echo esc_url( admin_url( 'users.php' ) ); ?>" class="fahim-input-group">
+						<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="fahim-filter-form">
 							<input type="hidden" name="page" value="<?php echo esc_attr( self::MENU_SLUG ); ?>">
 							<input type="hidden" name="tab" value="cleanup">
-							<label for="cv_min_age"><?php esc_html_e( 'Older than:', 'cleanverify-for-woocommerce' ); ?></label>
-							<input type="number" id="cv_min_age" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>" min="0" class="fahim-number-input">
-							<span><?php esc_html_e( 'days', 'cleanverify-for-woocommerce' ); ?></span>
+							<div class="fahim-input-combo">
+								<span class="fahim-input-combo-label">⏱️ <?php esc_html_e( 'Older than', 'cleanverify-for-woocommerce' ); ?></span>
+								<input type="number" id="cv_min_age" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>" min="0" class="fahim-number-input" aria-label="<?php esc_attr_e( 'Minimum account age in days', 'cleanverify-for-woocommerce' ); ?>">
+								<span class="fahim-input-combo-unit"><?php esc_html_e( 'days', 'cleanverify-for-woocommerce' ); ?></span>
+							</div>
 							<button type="submit" class="fahim-btn-primary">
 								<span>🔍</span> <?php esc_html_e( 'Filter', 'cleanverify-for-woocommerce' ); ?>
 							</button>
@@ -440,7 +912,7 @@ class CleanVerify_For_WooCommerce {
 					<div class="fahim-empty-icon">✨</div>
 					<h4 class="fahim-empty-title"><?php esc_html_e( 'Customer Database is Clean!', 'cleanverify-for-woocommerce' ); ?></h4>
 					<p class="fahim-empty-desc"><?php esc_html_e( 'No customer accounts match the current inactivity threshold. All accounts have placed at least one order or are newer than the selected filter buffer.', 'cleanverify-for-woocommerce' ); ?></p>
-					<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::MENU_SLUG, 'tab' => 'cleanup', 'cv_min_age' => 0 ), admin_url( 'users.php' ) ) ); ?>" class="fahim-btn-secondary">
+					<a href="<?php echo esc_url( add_query_arg( array( 'page' => self::MENU_SLUG, 'tab' => 'cleanup', 'cv_min_age' => 0 ), admin_url( 'admin.php' ) ) ); ?>" class="fahim-btn-secondary">
 						<span>⚡</span> <?php esc_html_e( 'Check All Accounts (0 Days)', 'cleanverify-for-woocommerce' ); ?>
 					</a>
 				</div>
@@ -535,6 +1007,18 @@ class CleanVerify_For_WooCommerce {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render the "Free vs Pro" comparison tab content.
+	 */
+	private function render_free_vs_pro_tab() {
+		$template_file = plugin_dir_path( __FILE__ ) . 'templates/free-vs-pro.php';
+		if ( file_exists( $template_file ) ) {
+			include $template_file;
+		} else {
+			echo '<p>' . esc_html__( 'Free vs Pro template could not be found.', 'cleanverify-for-woocommerce' ) . '</p>';
+		}
 	}
 
 	/**
