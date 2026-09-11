@@ -977,6 +977,26 @@ class CleanVerify_For_WooCommerce {
 						<input type="hidden" name="cv_min_age" value="<?php echo esc_attr( $min_age ); ?>">
 						<input type="hidden" name="cv_per_page" value="<?php echo esc_attr( $per_page ); ?>">
 
+						<!-- Deletion Safety & Confirmation Box at Top -->
+						<div class="fahim-danger-box">
+							<h4 class="fahim-danger-title">⚠️ <?php esc_html_e( 'Permanent Deletion Warning', 'cleanverify-for-woocommerce' ); ?></h4>
+							<p class="fahim-danger-desc">
+								<?php esc_html_e( 'Account deletion is permanent and cannot be reversed. Always export a CSV backup first. Accounts carrying Administrator, Editor, or Shop Manager roles are automatically protected and will never be touched.', 'cleanverify-for-woocommerce' ); ?>
+							</p>
+							<label class="fahim-confirm-label">
+								<input type="checkbox" name="cv_confirm" id="cv-confirm-checkbox" value="1" required>
+								<span><?php esc_html_e( 'I understand this will permanently delete the selected customer accounts and cannot be undone.', 'cleanverify-for-woocommerce' ); ?></span>
+							</label>
+							<div class="fahim-confirm-actions">
+								<button type="submit" name="cv_action" value="delete" id="cv-delete-btn" class="fahim-btn-danger">
+									<span>🗑️</span> <?php esc_html_e( 'Delete Selected Customers', 'cleanverify-for-woocommerce' ); ?>
+								</button>
+								<button type="submit" name="cv_action" value="export_csv" formnovalidate class="fahim-btn-secondary">
+									<span>📥</span> <?php esc_html_e( 'Export Selected to CSV', 'cleanverify-for-woocommerce' ); ?>
+								</button>
+							</div>
+						</div>
+
 						<!-- Table Action Toolbar -->
 						<div class="fahim-table-toolbar">
 							<div class="fahim-table-toolbar-left">
@@ -1058,26 +1078,6 @@ class CleanVerify_For_WooCommerce {
 									<?php endforeach; ?>
 								</tbody>
 							</table>
-						</div>
-
-						<!-- Deletion Safety & Confirmation Box -->
-						<div class="fahim-danger-box">
-							<h4 class="fahim-danger-title">⚠️ <?php esc_html_e( 'Permanent Deletion Warning', 'cleanverify-for-woocommerce' ); ?></h4>
-							<p class="fahim-danger-desc">
-								<?php esc_html_e( 'Account deletion is permanent and cannot be reversed. Always export a CSV backup first. Accounts carrying Administrator, Editor, or Shop Manager roles are automatically protected and will never be touched.', 'cleanverify-for-woocommerce' ); ?>
-							</p>
-							<label class="fahim-confirm-label">
-								<input type="checkbox" name="cv_confirm" id="cv-confirm-checkbox" value="1" required>
-								<span><?php esc_html_e( 'I understand this will permanently delete the selected customer accounts and cannot be undone.', 'cleanverify-for-woocommerce' ); ?></span>
-							</label>
-							<div class="fahim-confirm-actions">
-								<button type="submit" name="cv_action" value="delete" id="cv-delete-btn" class="fahim-btn-danger">
-									<span>🗑️</span> <?php esc_html_e( 'Delete Selected Customers', 'cleanverify-for-woocommerce' ); ?>
-								</button>
-								<button type="submit" name="cv_action" value="export_csv" formnovalidate class="fahim-btn-secondary">
-									<span>📥</span> <?php esc_html_e( 'Export Selected to CSV', 'cleanverify-for-woocommerce' ); ?>
-								</button>
-							</div>
 						</div>
 					</form>
 				</div>
